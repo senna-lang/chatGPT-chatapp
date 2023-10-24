@@ -14,6 +14,7 @@ import React, { useEffect, useState } from 'react';
 import { RiLogoutBoxRLine } from 'react-icons/Ri';
 import { auth, db } from '../../../firebase';
 import { useAppContext } from '@/context/AppContext';
+import { useRouter } from 'next/navigation';
 
 type Room = {
   id: string;
@@ -22,8 +23,9 @@ type Room = {
 };
 
 const Sidebar = () => {
-  const { user, userId, setSelectedRoom } = useAppContext();
+  const { user, userId, setSelectedRoom, selectedRoomName, setSelectedRoomName } = useAppContext();
   const [rooms, setRooms] = useState<Room[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     //ユーザーIDに応じてFirestoreからroomを取得してくる関数
@@ -66,13 +68,15 @@ const Sidebar = () => {
     }
   };
 
-  const selectRoom = (roomId: string) => {
+  const selectRoom = (roomId: string, roomName: string) => {
     //ルームの切り替えを行う関数
     setSelectedRoom(roomId);
+    setSelectedRoomName(roomName);
   };
 
   const handleLogout = () => {
     auth.signOut();
+    router.push('/auth/login')
   };
 
   return (
@@ -90,7 +94,7 @@ const Sidebar = () => {
             <li
               key={room.id}
               className="cursor-pointer border-b p-4 text-slate-100 hover:bg-blue-700 duration-200"
-              onClick={() => selectRoom(room.id)}
+              onClick={() => selectRoom(room.id, room.name)}
             >
               {room.name}
             </li>
@@ -98,12 +102,10 @@ const Sidebar = () => {
         </ul>
       </div>
       {user && (
-        <div className="mb-2 p-4 text-slate-100 font-medium">
-          {user.email}
-        </div>
+        <div className="mb-2 p-4 text-slate-100 font-medium">{user.email}</div>
       )}
       <div
-        onClick={handleLogout}
+        onClick={() => handleLogout()}
         className=" flex items-center mb-2 cursor-pointer p-4 hover:bg-slate-700 duration-150 justify-evenly text-slate-100"
       >
         <RiLogoutBoxRLine />
