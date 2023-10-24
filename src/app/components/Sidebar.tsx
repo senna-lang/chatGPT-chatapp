@@ -1,7 +1,58 @@
-import React from 'react';
+'use client';
+
+import {
+  Timestamp,
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
 import { RiLogoutBoxRLine } from 'react-icons/Ri';
+import { db } from '../../../firebase';
+import { useAppContext } from '@/context/AppContext';
+
+type Room = {
+  id: string;
+  name: string;
+  createdAt: Timestamp;
+};
 
 const Sidebar = () => {
+  const { user, userId, setSelectedRoom} = useAppContext();
+  const [rooms, setRooms] = useState<Room[]>([]);
+
+  useEffect(() => {
+    if (user) {
+      const fetchRooms = async () => {
+        const roomCollectionRef = collection(db, 'rooms');
+        const q = query(
+          roomCollectionRef,
+          where('userid', '==', userId),
+          orderBy('createdAt')
+        );
+        const unsubscribe = onSnapshot(q, snapshot => {
+          const newRooms: Room[] = snapshot.docs.map(doc => ({
+            id: doc.id,
+            name: doc.data().name,
+            createdAt: doc.data().createdAt,
+          }));
+          setRooms(newRooms);
+        });
+        return () => {
+          unsubscribe();
+        };
+      };
+
+      fetchRooms();
+    }
+  }, [userId]);
+
+  const selectRoom = (roomId:string) => {
+    setSelectedRoom(roomId);
+  }
+  
   return (
     <div className="bg-custom-blue h-full overflow-y-auto px-5 flex flex-col">
       <div className=" flex-grow ">
@@ -10,16 +61,19 @@ const Sidebar = () => {
           <h1 className=" text-white text-xl font-semibold p-4">New Chat</h1>
         </div>
         <ul>
-          <li className="cursor-pointer border-b p-4 text-slate-100 hover:bg-blue-700 duration-200">
-            Room-1
-          </li>
-          <li className="cursor-pointer border-b p-4 text-slate-100 hover:bg-blue-700 duration-200">
-            Room-2
-          </li>
+          {rooms.map(room => (
+            <li
+              key={room.id}
+              className="cursor-pointer border-b p-4 text-slate-100 hover:bg-blue-700 duration-200"
+              onClick={() => selectRoom(room.id)}
+            >
+              {room.name}
+            </li>
+          ))}
         </ul>
       </div>
       <div className=" flex items-center mb-2 cursor-pointer p-4 hover:bg-slate-700 duration-150 justify-evenly text-slate-100">
-        <RiLogoutBoxRLine/>
+        <RiLogoutBoxRLine />
         <span>ログアウト</span>
       </div>
     </div>
