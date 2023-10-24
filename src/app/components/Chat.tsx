@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { PiPaperPlaneTiltLight } from 'react-icons/Pi';
 import { Timestamp, doc, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../../../firebase';
@@ -21,10 +21,11 @@ const Chat = () => {
     dangerouslyAllowBrowser: true,
   });
 
-  const { selectedRoom } = useAppContext();
+  const { selectedRoom , selectedRoomName} = useAppContext();
   const [inputMassage, setInputMassage] = useState<string>('');
   const [messages, setMessages] = useState<Massage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const scrollDev = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (selectedRoom) {
@@ -45,6 +46,16 @@ const Chat = () => {
       fetchMessages();
     }
   }, [selectedRoom]);
+
+  useEffect(() => {
+    if(scrollDev.current) {
+      const element = scrollDev.current;
+      element.scrollTo({
+        top:element.scrollHeight,
+        behavior:'smooth'
+      })
+    }
+  },[messages])
 
   //メッセージをFirestoreに保存
   const sendMessage = async () => {
@@ -80,8 +91,8 @@ const Chat = () => {
   
   return (
     <div className=" bg-gray-500 h-full p-4 flex flex-col ">
-      <h1 className=" text-2xl text-white font-semibold mb-4">Room1</h1>
-      <div className="flex-grow overflow-y-auto mb-4">
+      <h1 className=" text-2xl text-white font-semibold mb-4">{selectedRoomName}</h1>
+      <div className="flex-grow overflow-y-auto mb-4" ref={scrollDev}>
         {messages.map((message, index) => (
           <div
           key={index}
