@@ -8,11 +8,11 @@ import {
   query,
   serverTimestamp,
   where,
-  addDoc
+  addDoc,
 } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { RiLogoutBoxRLine } from 'react-icons/Ri';
-import { db } from '../../../firebase';
+import { auth, db } from '../../../firebase';
 import { useAppContext } from '@/context/AppContext';
 
 type Room = {
@@ -25,7 +25,8 @@ const Sidebar = () => {
   const { user, userId, setSelectedRoom } = useAppContext();
   const [rooms, setRooms] = useState<Room[]>([]);
 
-  useEffect(() => {//ユーザーIDに応じてFirestoreからroomを取得してくる関数
+  useEffect(() => {
+    //ユーザーIDに応じてFirestoreからroomを取得してくる関数
     if (user) {
       const fetchRooms = async () => {
         const roomCollectionRef = collection(db, 'rooms');
@@ -34,7 +35,8 @@ const Sidebar = () => {
           where('userid', '==', userId),
           orderBy('createdAt')
         );
-        const unsubscribe = onSnapshot(q, snapshot => {//db内のデータの変更を監視
+        const unsubscribe = onSnapshot(q, snapshot => {
+          //db内のデータの変更を監視
           const newRooms: Room[] = snapshot.docs.map(doc => ({
             id: doc.id,
             name: doc.data().name,
@@ -51,22 +53,26 @@ const Sidebar = () => {
     }
   }, [userId]);
 
-  const addNewRoom = async() => { //新しいルームを作成する関数
-   const roomName =  prompt('ルーム名を入力してください');
-   if(roomName) {
-    const newRoomRef = collection(db,'rooms');
-    await addDoc (newRoomRef, {
-      name: roomName,
-      userid: userId,
-      createdAt: serverTimestamp(),
-    })
-   }
-  }
+  const addNewRoom = async () => {
+    //新しいルームを作成する関数
+    const roomName = prompt('ルーム名を入力してください');
+    if (roomName) {
+      const newRoomRef = collection(db, 'rooms');
+      await addDoc(newRoomRef, {
+        name: roomName,
+        userid: userId,
+        createdAt: serverTimestamp(),
+      });
+    }
+  };
 
-  // console.log (rooms)
-
-  const selectRoom = (roomId: string) => {//ルームの切り替えを行う関数
+  const selectRoom = (roomId: string) => {
+    //ルームの切り替えを行う関数
     setSelectedRoom(roomId);
+  };
+
+  const handleLogout = () => {
+    auth.signOut();
   };
 
   return (
@@ -91,7 +97,15 @@ const Sidebar = () => {
           ))}
         </ul>
       </div>
-      <div className=" flex items-center mb-2 cursor-pointer p-4 hover:bg-slate-700 duration-150 justify-evenly text-slate-100">
+      {user && (
+        <div className="mb-2 p-4 text-slate-100 font-medium">
+          {user.email}
+        </div>
+      )}
+      <div
+        onClick={handleLogout}
+        className=" flex items-center mb-2 cursor-pointer p-4 hover:bg-slate-700 duration-150 justify-evenly text-slate-100"
+      >
         <RiLogoutBoxRLine />
         <span>ログアウト</span>
       </div>
